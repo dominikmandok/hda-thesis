@@ -1,0 +1,36 @@
+{
+    "$schema": "https://json-schema.org/draft/2020-12/schema",
+    "$id": "http://localhost:8888/job.schema.json",
+    "title": "Job",
+    "description": "A job that can be run by the changeexecutor.",
+    "type": "object",
+    "properties": {
+        "changes": {
+            "description": "The changes to be executed by this job.",
+            "type": "array",
+            "items": {
+                "$ref": "http://localhost:8888/change.schema.json"
+            },
+            "exclusiveMinimum": 0
+        },
+        "credentials": {
+            "description": "The credentials for the job.",
+            "$ref": "http://localhost:8888/credentials.schema.json"
+        }
+    },
+    "anyOf": [
+        {
+            "properties": {
+                "changes": {
+                    "items": {
+                        "required": ["credentials"]
+                    }
+                }
+            }
+        },
+        {
+            "required": ["credentials"]
+        }
+    ],
+    "required": ["changes"]
+}
