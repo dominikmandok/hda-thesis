@@ -1,0 +1,115 @@
+# Topology
+# source <--> xr-1 <--> xr-2 <--> xr-3 <--> xr-4 <--> xr-5 <--> dest
+#
+# xr-2, xr-3 and xr-4 are running in one ospf area 0 and use mpls ldp.
+# xr-1 and xr-5 are running in another ospf area 1 and speak bgp to their neighbors
+#
+# source:   eth0:       ip: 10.10.0.2/24
+# xr-1:     Gi0/0/0/0:  ip: 10.10.0.3/24
+# xr-1:     Gi0/0/0/1:  ip: 10.10.1.1/30
+# xr-2:     Gi0/0/0/0:  ip: 10.10.1.2/30
+# xr-2:     Gi0/0/0/1:  ip: 10.11.0.1/30
+# xr-3:     Gi0/0/0/0:  ip: 10.11.0.2/30
+# xr-3:     Gi0/0/0/1:  ip: 10.11.0.5/30
+# xr-4:     Gi0/0/0/0:  ip: 10.11.0.6/30
+# xr-4:     Gi0/0/0/1:  ip: 10.10.2.1/30
+# xr-5:     Gi0/0/0/0:  ip: 10.10.2.2/30
+# xr-5:     Gi0/0/0/1:  ip: 10.10.3.2/24
+# dest:     eth0:       ip: 10.10.3.3/24
+
+
+services:
+  source:
+    non_xr: true
+    image: dominikmandok/xrdclient:alpine
+    container_name: source
+    stdin_open: true
+    tty: true
+    cap_add:
+      - NET_ADMIN
+    command: /bin/sh -c "ip route add 10.0.0.0/8 via 10.10.0.3 && /bin/sh"
+    networks:
+      source-xrd-1:
+        ipv4_address: 10.10.0.2
+  dest:
+    non_xr: true
+    image: dominikmandok/xrdclient:alpine
+    container_name: dest
+    stdin_open: true
+    tty: true
+    networks:
+      xrd-5-dest:
+        ipv4_address: 10.10.3.3
+    cap_add:
+      - NET_ADMIN
+    command: /bin/sh -c "ip route add 10.0.0.0/8 via 10.10.3.2 && /bin/sh"
+  xr-1:
+    xr_startup_cfg: xrd-1_xrconf.cfg
+    xr_interfaces:
+      - Gi0/0/0/0
+      - Gi0/0/0/1
+      - Mg0/RP0/CPU0/0
+    networks:
+      source-xrd-1:
+        ipv4_address: 10.10.0.3
+    mem_reservation: 2G
+  xr-2:
+    xr_startup_cfg: xrd-2_xrconf.cfg
+    xr_interfaces:
+      - Gi0/0/0/0
+      - Gi0/0/0/1
+      - Mg0/RP0/CPU0/0
+    mem_reservation: 2G
+  xr-3:
+    xr_startup_cfg: xrd-3_xrconf.cfg
+    xr_interfaces:
+      - Gi0/0/0/0
+      - Gi0/0/0/1
+      - Mg0/RP0/CPU0/0
+    mem_reservation: 2G
+  xr-4:
+    xr_startup_cfg: xrd-4_xrconf.cfg
+    xr_interfaces:
+      - Gi0/0/0/0
+      - Gi0/0/0/1
+      - Mg0/RP0/CPU0/0
+    mem_reservation: 2G
+  xr-5:
+    xr_startup_cfg: xrd-5_xrconf.cfg
+    xr_interfaces:
+      - Gi0/0/0/0
+      - Gi0/0/0/1
+      - Mg0/RP0/CPU0/0
+    networks:
+      xrd-5-dest:
+        ipv4_address: 10.10.3.2
+    mem_reservation: 2G
+
+xr_l2networks:
+  - ["xr-1:Gi0/0/0/1", "xr-2:Gi0/0/0/0"]
+  - ["xr-2:Gi0/0/0/1", "xr-3:Gi0/0/0/0"]
+  - ["xr-3:Gi0/0/0/1", "xr-4:Gi0/0/0/0"]
+  - ["xr-4:Gi0/0/0/1", "xr-5:Gi0/0/0/0"]
+networks:
+  mgmt:
+    xr_interfaces:
+      - xr-1:Mg0/RP0/CPU0/0
+      - xr-2:Mg0/RP0/CPU0/0
+      - xr-3:Mg0/RP0/CPU0/0
+      - xr-4:Mg0/RP0/CPU0/0
+      - xr-5:Mg0/RP0/CPU0/0
+    ipam:
+      config:
+        - subnet: 172.30.0.0/24
+  source-xrd-1:
+    ipam:
+      config:
+        - subnet: 10.10.0.0/24
+    xr_interfaces:
+      - xr-1:Gi0/0/0/0
+  xrd-5-dest:
+    ipam:
+      config:
+        - subnet: 10.10.3.0/24
+    xr_interfaces:
+      - xr-5:Gi0/0/0/1

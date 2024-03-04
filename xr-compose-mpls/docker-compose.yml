@@ -1,0 +1,185 @@
+networks:
+  mgmt:
+    driver_opts:
+      com.docker.network.container_iface_prefix: xr-4
+    ipam:
+      config:
+      - subnet: 172.30.0.0/24
+  source-xrd-1:
+    driver_opts:
+      com.docker.network.container_iface_prefix: xr-5
+    ipam:
+      config:
+      - subnet: 10.10.0.0/24
+  xr-1-gi1-xr-2-gi0:
+    driver_opts:
+      com.docker.network.container_iface_prefix: xr-0
+      com.docker.network.driver.mtu: 9000
+    internal: false
+    name: xr-1-gi1-xr-2-gi0
+  xr-2-gi1-xr-3-gi0:
+    driver_opts:
+      com.docker.network.container_iface_prefix: xr-1
+      com.docker.network.driver.mtu: 9000
+    internal: false
+    name: xr-2-gi1-xr-3-gi0
+  xr-3-gi1-xr-4-gi0:
+    driver_opts:
+      com.docker.network.container_iface_prefix: xr-2
+      com.docker.network.driver.mtu: 9000
+    internal: false
+    name: xr-3-gi1-xr-4-gi0
+  xr-4-gi1-xr-5-gi0:
+    driver_opts:
+      com.docker.network.container_iface_prefix: xr-3
+      com.docker.network.driver.mtu: 9000
+    internal: false
+    name: xr-4-gi1-xr-5-gi0
+  xrd-5-dest:
+    driver_opts:
+      com.docker.network.container_iface_prefix: xr-6
+    ipam:
+      config:
+      - subnet: 10.10.3.0/24
+services:
+  dest:
+    cap_add:
+    - NET_ADMIN
+    command: /bin/sh -c "ip route add 10.0.0.0/8 via 10.10.3.2 && /bin/sh"
+    container_name: dest
+    image: dominikmandok/xrdclient:alpine
+    networks:
+      xrd-5-dest:
+        ipv4_address: 10.10.3.3
+    stdin_open: true
+    tty: true
+  source:
+    cap_add:
+    - NET_ADMIN
+    command: /bin/sh -c "ip route add 10.0.0.0/8 via 10.10.0.3 && /bin/sh"
+    container_name: source
+    image: dominikmandok/xrdclient:alpine
+    networks:
+      source-xrd-1:
+        ipv4_address: 10.10.0.2
+    stdin_open: true
+    tty: true
+  xr-1:
+    container_name: xr-1
+    environment:
+      XR_EVERY_BOOT_CONFIG: /etc/xrd/startup.cfg
+      XR_INTERFACES: linux:xr-50,xr_name=Gi0/0/0/0,chksum;linux:xr-00,xr_name=Gi0/0/0/1
+      XR_MGMT_INTERFACES: linux:xr-40,xr_name=Mg0/RP0/CPU0/0,chksum
+    image: registry.devops.telekom.de/ml-automation/bbac_poc/xrd-control-plane:7.9.1
+    mem_reservation: 2G
+    networks:
+      mgmt: null
+      source-xrd-1:
+        ipv4_address: 10.10.0.3
+      xr-1-gi1-xr-2-gi0: null
+    pids_limit: -1
+    privileged: true
+    stdin_open: true
+    tty: true
+    volumes:
+    - source: ./xrd-1_xrconf.cfg
+      target: /etc/xrd/startup.cfg
+      type: bind
+    - xr-1:/xr-storage/
+  xr-2:
+    container_name: xr-2
+    environment:
+      XR_EVERY_BOOT_CONFIG: /etc/xrd/startup.cfg
+      XR_INTERFACES: linux:xr-00,xr_name=Gi0/0/0/0;linux:xr-10,xr_name=Gi0/0/0/1
+      XR_MGMT_INTERFACES: linux:xr-40,xr_name=Mg0/RP0/CPU0/0,chksum
+    image: registry.devops.telekom.de/ml-automation/bbac_poc/xrd-control-plane:7.9.1
+    mem_reservation: 2G
+    networks:
+      mgmt: null
+      xr-1-gi1-xr-2-gi0: null
+      xr-2-gi1-xr-3-gi0: null
+    pids_limit: -1
+    privileged: true
+    stdin_open: true
+    tty: true
+    volumes:
+    - source: ./xrd-2_xrconf.cfg
+      target: /etc/xrd/startup.cfg
+      type: bind
+    - xr-2:/xr-storage/
+  xr-3:
+    container_name: xr-3
+    environment:
+      XR_EVERY_BOOT_CONFIG: /etc/xrd/startup.cfg
+      XR_INTERFACES: linux:xr-10,xr_name=Gi0/0/0/0;linux:xr-20,xr_name=Gi0/0/0/1
+      XR_MGMT_INTERFACES: linux:xr-40,xr_name=Mg0/RP0/CPU0/0,chksum
+    image: registry.devops.telekom.de/ml-automation/bbac_poc/xrd-control-plane:7.9.1
+    mem_reservation: 2G
+    networks:
+      mgmt: null
+      xr-2-gi1-xr-3-gi0: null
+      xr-3-gi1-xr-4-gi0: null
+    pids_limit: -1
+    privileged: true
+    stdin_open: true
+    tty: true
+    volumes:
+    - source: ./xrd-3_xrconf.cfg
+      target: /etc/xrd/startup.cfg
+      type: bind
+    - xr-3:/xr-storage/
+  xr-4:
+    container_name: xr-4
+    environment:
+      XR_EVERY_BOOT_CONFIG: /etc/xrd/startup.cfg
+      XR_INTERFACES: linux:xr-20,xr_name=Gi0/0/0/0;linux:xr-30,xr_name=Gi0/0/0/1
+      XR_MGMT_INTERFACES: linux:xr-40,xr_name=Mg0/RP0/CPU0/0,chksum
+    image: registry.devops.telekom.de/ml-automation/bbac_poc/xrd-control-plane:7.9.1
+    mem_reservation: 2G
+    networks:
+      mgmt: null
+      xr-3-gi1-xr-4-gi0: null
+      xr-4-gi1-xr-5-gi0: null
+    pids_limit: -1
+    privileged: true
+    stdin_open: true
+    tty: true
+    volumes:
+    - source: ./xrd-4_xrconf.cfg
+      target: /etc/xrd/startup.cfg
+      type: bind
+    - xr-4:/xr-storage/
+  xr-5:
+    container_name: xr-5
+    environment:
+      XR_EVERY_BOOT_CONFIG: /etc/xrd/startup.cfg
+      XR_INTERFACES: linux:xr-30,xr_name=Gi0/0/0/0;linux:xr-60,xr_name=Gi0/0/0/1,chksum
+      XR_MGMT_INTERFACES: linux:xr-40,xr_name=Mg0/RP0/CPU0/0,chksum
+    image: registry.devops.telekom.de/ml-automation/bbac_poc/xrd-control-plane:7.9.1
+    mem_reservation: 2G
+    networks:
+      mgmt: null
+      xr-4-gi1-xr-5-gi0: null
+      xrd-5-dest:
+        ipv4_address: 10.10.3.2
+    pids_limit: -1
+    privileged: true
+    stdin_open: true
+    tty: true
+    volumes:
+    - source: ./xrd-5_xrconf.cfg
+      target: /etc/xrd/startup.cfg
+      type: bind
+    - xr-5:/xr-storage/
+version: '2.4'
+volumes:
+  xr-1:
+    name: xr-1
+  xr-2:
+    name: xr-2
+  xr-3:
+    name: xr-3
+  xr-4:
+    name: xr-4
+  xr-5:
+    name: xr-5
