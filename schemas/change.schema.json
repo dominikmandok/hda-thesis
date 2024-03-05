@@ -1,6 +1,6 @@
 {
     "$schema": "https://json-schema.org/draft/2020-12/schema",
-    "$id": "http://localhost:8888/change.schema.json",
+    "$id": "https://dominikmandok.github.io/hda-thesis/change.schema.json",
     "title": "Change",
     "description": "A change is contained in a job.",
     "type": "object",
@@ -21,7 +21,7 @@
         },
         "credentials": {
             "description": "The credentials to use.",
-            "$ref": "http://localhost:8888/credentials.schema.json"
+            "$ref": "https://dominikmandok.github.io/hda-thesis/credentials.schema.json"
         }
     },
     "required": ["host", "config_path"]

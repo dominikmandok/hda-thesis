@@ -1,6 +1,6 @@
 {
     "$schema": "https://json-schema.org/draft/2020-12/schema",
-    "$id": "http://localhost:8888/job.schema.json",
+    "$id": "https://dominikmandok.github.io/hda-thesis/job.schema.json",
     "title": "Job",
     "description": "A job that can be run by the changeexecutor.",
     "type": "object",
@@ -9,13 +9,13 @@
             "description": "The changes to be executed by this job.",
             "type": "array",
             "items": {
-                "$ref": "http://localhost:8888/change.schema.json"
+                "$ref": "https://dominikmandok.github.io/hda-thesis/change.schema.json"
             },
             "exclusiveMinimum": 0
         },
         "credentials": {
             "description": "The credentials for the job.",
-            "$ref": "http://localhost:8888/credentials.schema.json"
+            "$ref": "https://dominikmandok.github.io/hda-thesis/credentials.schema.json"
         }
     },
     "anyOf": [
